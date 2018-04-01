@@ -1,10 +1,4 @@
 
-Altium/__Previews/Kello_Mechanical\.SchDocPreview
-
-Altium/__Previews/Kello_Nixie\.SchDocPreview
-
-Altium/__Previews/Kello_uC\.SchDocPreview
-
-Altium/__Previews/NIXIE Clock\.SchDocPreview
-
-Altium/__Previews/TechOcean_schematic_template_a4\.SchDotPreview
+# ignore all Altium Previews
+*.SchDotPreview
+*.SchDocPreview
