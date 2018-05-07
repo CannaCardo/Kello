@@ -2,3 +2,4 @@
 # ignore all Altium Previews
 *.SchDotPreview
 *.SchDocPreview
+Altium/History/
