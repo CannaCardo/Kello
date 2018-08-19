@@ -1,25 +1,30 @@
 # Kello
 > A simple USB powered Nixie Clock
 
-[![NPM Version][npm-image]][npm-url]
-[![Build Status][travis-image]][travis-url]
-[![Downloads Stats][npm-downloads]][npm-url]
+[![Version][Ver-image]]
+[![Status][Stat-image]]
 
-USB powered clock made on four classic Z567M Nixie tubes. Displays time and date, can be set up both from PC app or via capacitive buttons on the case. Delays and display duration for time and date can be configured. Settings and current time are stored in EEprom and RTC.
+USB powered clock made on four classic Z567M Nixie tubes. Pretty simplistic, without unnecessary gadgets: displays time, can be set up both from PC app or via optional capacitive buttons. Refresh frequency, brightness, time format, time and date (for adjusting winter/ summer time) can be configured as needed. Settings and current time are stored in EEprom and RTC. If the clock is connected to the PC it will update its time every minute (using the provided link).
 
 ![](header.png)
 
-## Usage example
+For the prototype version I've dropped the idea of capacitive buttons integrated into the case, as the clock will stay connected to the PC and it's much more ergonomic to use the app.
+The first idea for the clock opted for bluetooth/wifi integration, so that a smartphone could be used as interface for quick setup and the clock itself could synchronize time via Internet.  Since there already is a USB socket used to power the device it seemed silly not to connect it to the PC, which itself simplified the project rendering Wifi and BT pointless. 
 
-//TODO
+## Construction advices
 
-_For more examples and usage, please refer to the [Wiki][wiki]._
+The Nixie standoffs can be made from D-Sub connectors (such as MH CONNECTORS MHDD25-F-T-B-M). They are pricey, but work wonders and look good. For this clock i used 3 connectors, and ended up with some leftover pins. To extract them from the socket itself cut the metal enclosure to release the black plastic holding the pins.
+
+The dots (Neon bulbs) are soldered on 3 pieces of 2mm piano wire. Sanding the wire down before soldering will ease the process. 
 
 
 ## Release History
 
-* 0.0.1
-    * Prototype
+* 0.1.0
+    * First Prototype
+* 0.1.1
+    * Placed GND Pour keepout under L1
+    * Fixed RTC reseting at powerup
 
 ## Meta
 
@@ -29,18 +34,8 @@ Distributed under the Beerware license. If you decide to build your own feel fre
 
 [https://github.com/CannaCardo/github-link](https://github.com/CannaCardo/)
 
-## Contributing
-
-1. Fork it (<https://github.com/yourname/yourproject/fork>)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
-3. Commit your changes (`git commit -am 'Add some fooBar'`)
-4. Push to the branch (`git push origin feature/fooBar`)
-5. Create a new Pull Request
 
 <!-- Markdown link & img dfn's -->
-[npm-image]: https://img.shields.io/npm/v/datadog-metrics.svg?style=flat-square
-[npm-url]: https://npmjs.org/package/datadog-metrics
-[npm-downloads]: https://img.shields.io/npm/dm/datadog-metrics.svg?style=flat-square
-[travis-image]: https://img.shields.io/travis/dbader/node-datadog-metrics/master.svg?style=flat-square
-[travis-url]: https://travis-ci.org/dbader/node-datadog-metrics
+[Ver-image]: https://img.shields.io/badge/Version-1.0-orange.svg?longCache=true&style=flat-square
+[Stat-image]: https://img.shields.io/badge/Status-Finished-green.svg?longCache=true&style=flat-square
 [wiki]: https://github.com/CannaCardo/Kello/wiki

@@ -3,3 +3,21 @@
 *.SchDotPreview
 *.SchDocPreview
 Altium/History/
+
+Altium/debug\.log
+
+Altium/Project Outputs for Kello/Gerber/Gerber-macro\.APR_LIB
+
+Altium/Project Outputs for Kello/Gerber/Gerber\.apr
+
+Altium/Project Outputs for Kello/Gerber/Gerber\.EXTREP
+
+Altium/Project Outputs for Kello/Gerber/Gerber\.REP
+
+Altium/Project Outputs for Kello/Gerber/Gerber\.RUL
+
+Altium/Project Outputs for Kello/Project Outputs for Kello\.zip
+
+Altium/Project Outputs for Kello/Status Report\.Txt
+
+NEON/

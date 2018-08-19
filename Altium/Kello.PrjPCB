@@ -207,6 +207,17 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=CXDOEBAS
 
+[ProjectVariant1]
+UniqueID=A693FAD8-1624-4872-8CB3-D0D03FDCCA34
+Description=Prototype
+AllowFabrication=0
+ParameterCount=0
+VariationCount=3
+Variation1=Designator=CS1|UniqueId=\XJWKWMFS|Kind=1|AlternatePart= 
+Variation2=Designator=CS2|UniqueId=\JPWJEBVO|Kind=1|AlternatePart= 
+Variation3=Designator=CS3|UniqueId=\VXBLBJVE|Kind=1|AlternatePart= 
+ParamVariationCount=0
+
 [Configuration1]
 Name=Sources
 ParameterCount=0
@@ -307,33 +318,33 @@ OutputName17=SciCards Netlist
 OutputDocumentPath17=
 OutputVariantName17=
 OutputDefault17=0
-OutputType18=SIMetrixNetlist
-OutputName18=SIMetrix
+OutputType18=TangoNetlist
+OutputName18=Tango Netlist
 OutputDocumentPath18=
 OutputVariantName18=
 OutputDefault18=0
-OutputType19=SIMPLISNetlist
-OutputName19=SIMPLIS
+OutputType19=TelesisNetlist
+OutputName19=Telesis Netlist
 OutputDocumentPath19=
 OutputVariantName19=
 OutputDefault19=0
-OutputType20=TangoNetlist
-OutputName20=Tango Netlist
+OutputType20=WireListNetlist
+OutputName20=WireList Netlist
 OutputDocumentPath20=
 OutputVariantName20=
 OutputDefault20=0
-OutputType21=TelesisNetlist
-OutputName21=Telesis Netlist
+OutputType21=XSpiceNetlist
+OutputName21=XSpice Netlist
 OutputDocumentPath21=
 OutputVariantName21=
 OutputDefault21=0
-OutputType22=WireListNetlist
-OutputName22=WireList Netlist
+OutputType22=SIMetrixNetlist
+OutputName22=SIMetrix
 OutputDocumentPath22=
 OutputVariantName22=
 OutputDefault22=0
-OutputType23=XSpiceNetlist
-OutputName23=XSpice Netlist
+OutputType23=SIMPLISNetlist
+OutputName23=SIMPLIS
 OutputDocumentPath23=
 OutputVariantName23=
 OutputDefault23=0
