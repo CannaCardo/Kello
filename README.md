@@ -1,8 +1,8 @@
 # Kello
 > A simple USB powered Nixie Clock
 
-[![Version][Ver-image]]
-[![Status][Stat-image]]
+![Version][Ver-image]
+![Status][Stat-image]
 
 USB powered clock made on four classic Z567M Nixie tubes. Pretty simplistic, without unnecessary gadgets: displays time, can be set up both from PC app or via optional capacitive buttons. Refresh frequency, brightness, time format, time and date (for adjusting winter/ summer time) can be configured as needed. Settings and current time are stored in EEprom and RTC. If the clock is connected to the PC it will update its time every minute (using the provided link).
 
