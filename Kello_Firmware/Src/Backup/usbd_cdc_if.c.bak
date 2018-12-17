@@ -1,0 +1,742 @@
+/**
+  ******************************************************************************
+  * @file           : usbd_cdc_if.c
+  * @version        : v2.0_Cube
+  * @brief          : Usb device for Virtual Com Port.
+  ******************************************************************************
+  * This notice applies to any and all portions of this file
+  * that are not between comment pairs USER CODE BEGIN and
+  * USER CODE END. Other portions of this file, whether 
+  * inserted by the user or by software development tools
+  * are owned by their respective copyright owners.
+  *
+  * Copyright (c) 2018 STMicroelectronics International N.V. 
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without 
+  * modification, are permitted, provided that the following conditions are met:
+  *
+  * 1. Redistribution of source code must retain the above copyright notice, 
+  *    this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright notice,
+  *    this list of conditions and the following disclaimer in the documentation
+  *    and/or other materials provided with the distribution.
+  * 3. Neither the name of STMicroelectronics nor the names of other 
+  *    contributors to this software may be used to endorse or promote products 
+  *    derived from this software without specific written permission.
+  * 4. This software, including modifications and/or derivative works of this 
+  *    software, must execute solely and exclusively on microcontroller or
+  *    microprocessor devices manufactured by or for STMicroelectronics.
+  * 5. Redistribution and use of this software other than as permitted under 
+  *    this license is void and will automatically terminate your rights under 
+  *    this license. 
+  *
+  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
+  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
+  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
+  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  ******************************************************************************
+  */
+
+/* Includes ------------------------------------------------------------------*/
+#include "usbd_cdc_if.h"
+
+/* USER CODE BEGIN INCLUDE */
+#include <string.h>
+#include "Defines.h"
+/* USER CODE END INCLUDE */
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE END PV */
+
+/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
+  * @brief Usb device library.
+  * @{
+  */
+
+/** @addtogroup USBD_CDC_IF
+  * @{
+  */
+
+/** @defgroup USBD_CDC_IF_Private_TypesDefinitions USBD_CDC_IF_Private_TypesDefinitions
+  * @brief Private types.
+  * @{
+  */
+
+/* USER CODE BEGIN PRIVATE_TYPES */
+
+/* USER CODE END PRIVATE_TYPES */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Private_Defines USBD_CDC_IF_Private_Defines
+  * @brief Private defines.
+  * @{
+  */
+
+/* USER CODE BEGIN PRIVATE_DEFINES */
+/* Define size for the receive and transmit buffer over CDC */
+/* It's up to user to redefine and/or remove those define */
+#define APP_RX_DATA_SIZE  500
+#define APP_TX_DATA_SIZE  10
+/* USER CODE END PRIVATE_DEFINES */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Private_Macros USBD_CDC_IF_Private_Macros
+  * @brief Private macros.
+  * @{
+  */
+
+/* USER CODE BEGIN PRIVATE_MACRO */
+
+/* USER CODE END PRIVATE_MACRO */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Private_Variables USBD_CDC_IF_Private_Variables
+  * @brief Private variables.
+  * @{
+  */
+/* Create buffer for reception and transmission           */
+/* It's up to user to redefine and/or remove those define */
+/** Received data over USB are stored in this buffer      */
+uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+
+/** Data to send over USB CDC are stored in this buffer   */
+uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
+
+/* USER CODE BEGIN PRIVATE_VARIABLES */
+
+/* USER CODE END PRIVATE_VARIABLES */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
+  * @brief Public variables.
+  * @{
+  */
+
+extern USBD_HandleTypeDef hUsbDeviceFS;
+
+/* USER CODE BEGIN EXPORTED_VARIABLES */
+
+/* USER CODE END EXPORTED_VARIABLES */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Private_FunctionPrototypes USBD_CDC_IF_Private_FunctionPrototypes
+  * @brief Private functions declaration.
+  * @{
+  */
+
+static int8_t CDC_Init_FS(void);
+static int8_t CDC_DeInit_FS(void);
+static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length);
+static int8_t CDC_Receive_FS(uint8_t* pbuf, uint32_t *Len);
+
+/* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
+
+/* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
+
+/**
+  * @}
+  */
+
+USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
+{
+  CDC_Init_FS,
+  CDC_DeInit_FS,
+  CDC_Control_FS,
+  CDC_Receive_FS
+};
+
+/* Private functions ---------------------------------------------------------*/
+/**
+  * @brief  Initializes the CDC media low layer over the FS USB IP
+  * @retval USBD_OK if all operations are OK else USBD_FAIL
+  */
+static int8_t CDC_Init_FS(void)
+{
+  /* USER CODE BEGIN 3 */
+  /* Set Application Buffers */
+  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+  return (USBD_OK);
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief  DeInitializes the CDC media low layer
+  * @retval USBD_OK if all operations are OK else USBD_FAIL
+  */
+static int8_t CDC_DeInit_FS(void)
+{
+  /* USER CODE BEGIN 4 */
+  return (USBD_OK);
+  /* USER CODE END 4 */
+}
+
+/**
+  * @brief  Manage the CDC class requests
+  * @param  cmd: Command code
+  * @param  pbuf: Buffer containing command data (request parameters)
+  * @param  length: Number of data to be sent (in bytes)
+  * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
+  */
+static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
+{
+  /* USER CODE BEGIN 5 */
+  switch(cmd)
+  {
+    case CDC_SEND_ENCAPSULATED_COMMAND:
+
+    break;
+
+    case CDC_GET_ENCAPSULATED_RESPONSE:
+
+    break;
+
+    case CDC_SET_COMM_FEATURE:
+
+    break;
+
+    case CDC_GET_COMM_FEATURE:
+
+    break;
+
+    case CDC_CLEAR_COMM_FEATURE:
+
+    break;
+
+  /*******************************************************************************/
+  /* Line Coding Structure                                                       */
+  /*-----------------------------------------------------------------------------*/
+  /* Offset | Field       | Size | Value  | Description                          */
+  /* 0      | dwDTERate   |   4  | Number |Data terminal rate, in bits per second*/
+  /* 4      | bCharFormat |   1  | Number | Stop bits                            */
+  /*                                        0 - 1 Stop bit                       */
+  /*                                        1 - 1.5 Stop bits                    */
+  /*                                        2 - 2 Stop bits                      */
+  /* 5      | bParityType |  1   | Number | Parity                               */
+  /*                                        0 - None                             */
+  /*                                        1 - Odd                              */
+  /*                                        2 - Even                             */
+  /*                                        3 - Mark                             */
+  /*                                        4 - Space                            */
+  /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
+  /*******************************************************************************/
+    case CDC_SET_LINE_CODING:
+
+    break;
+
+    case CDC_GET_LINE_CODING:
+
+    break;
+
+    case CDC_SET_CONTROL_LINE_STATE:
+
+    break;
+
+    case CDC_SEND_BREAK:
+
+    break;
+
+  default:
+    break;
+  }
+
+  return (USBD_OK);
+  /* USER CODE END 5 */
+}
+
+/**
+  * @brief  Data received over USB OUT endpoint are sent over CDC interface
+  *         through this function.
+  *
+  *         @note
+  *         This function will block any OUT packet reception on USB endpoint
+  *         untill exiting this function. If you exit this function before transfer
+  *         is complete on CDC interface (ie. using DMA controller) it will result
+  *         in receiving more data while previous ones are still not sent.
+  *
+  * @param  Buf: Buffer of data to be received
+  * @param  Len: Number of data received (in bytes)
+  * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
+  */
+static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
+{
+  /* USER CODE BEGIN 6 */
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, Buf);
+  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
+  // Variables in USB.c
+  extern uint8_t     USB_Update_Time;
+  extern uint8_t     USB_Update_Brightness;
+  extern uint8_t     USB_Update_RefFreq;
+  extern uint8_t     USB_Update_TimeFormat;
+  extern uint8_t     USB_Update_DotStyle;
+  extern uint8_t	 USB_SaveSettings;
+  extern uint8_t	 USB_UnknownRequest;
+
+  extern uint8_t	 USB_Help;
+
+  extern uint8_t     USB_Hours;
+  extern uint8_t     USB_Minutes;
+  extern uint8_t     USB_Seconds;
+
+  extern uint8_t     USB_TimeFormat;
+  extern uint8_t     USB_Brightness;
+  extern uint8_t     USB_DotStyle;
+  extern uint16_t    USB_RefreshFreq;
+
+
+  // Possible requests:
+  // "Set Time <HH:MM:SS><CR><LF>"
+  // "Set Time Format <12/24><CR><LF>"
+  // "Set Refresh Rate <XXXXHz><CR><LF>"
+  // "Set Brightness <XX%><CR><LF>"
+  // "Set Dot Style <dot style><CR><LF>"
+  // "Set Custom Dot Style <200 16bit values (400 Bytes)><CR><LF>" TODO
+  // "Save settings<CR><LF>"
+  // "Read EEprom <Addr><CR><LF>" TODO
+  // "Save EEprom <Addr><CR><LF>" TODO
+  // "help<CR><LF>" - command list
+  // "help <command><CR><LF>" - command info
+  uint8_t* buf_ = Buf;
+  uint32_t len_ = *Len;
+
+  while( len_ ){
+	  // Request interpretation
+	  if( len_ >= 19 &&
+		  !strcmp((char*)buf_, "set time ") &&
+		  buf_[11] == ':' &&
+		  buf_[14] == ':' &&
+		  buf_[17] == '\r' &&
+		  buf_[18] == '\n' ){
+		  // --------------------------------------------------------------------------------------- Set Time
+		  // Check if the values are numerical and within the correct range
+		  if( buf_[9]  >= '0' && buf_[9]  <= '2' &&
+			  buf_[10] >= '0' && buf_[10] <= '9' &&
+			  buf_[12] >= '0' && buf_[12] <= '5' &&
+			  buf_[13] >= '0' && buf_[13] <= '9' &&
+			  buf_[15] >= '0' && buf_[15] <= '5' &&
+			  buf_[16] >= '0' && buf_[16] <= '9'){
+
+			  // issue time update request
+			  USB_Hours 	= ( ((buf_[9]  - '0')<<4) | (buf_[10] - '0') );
+			  USB_Minutes 	= ( ((buf_[12] - '0')<<4) | (buf_[13] - '0') );
+			  USB_Seconds	= ( ((buf_[15] - '0')<<4) | (buf_[16] - '0') );
+			  USB_Update_Time = USB_UPDATE_VALUE;
+		  }else{
+			  USB_Update_Time = USB_UPDATE_INVALID_ARG;
+		  }
+
+		  // delete frame from input buffer
+		  buf_ = buf_ + 19;
+		  len_ -= 19;
+	  }else if( len_ >= 20 && !strcmp((char*)buf_, "set time format ") && buf_[18] == '\r' && buf_[19] == '\n' ){
+		  // --------------------------------------------------------------------------------------- Set Time Format
+		  // Check if the values are numerical and within the correct range
+		  if((buf_[16] == '1' && buf_[17] == '2') ||
+			 (buf_[16] == '2' && buf_[17] == '4')){
+
+			  // issue time update request
+			  USB_TimeFormat = ( ((buf_[16] - '0')*10) + (buf_[17] - '0') );
+			  USB_Update_TimeFormat = USB_UPDATE_VALUE;
+		  }else{
+			  USB_Update_TimeFormat = USB_UPDATE_INVALID_ARG;
+		  }
+
+		  // delete frame from input buffer
+		  buf_ = buf_ + 20;
+		  len_ -= 20;
+	  }else if(  len_ >= 19 && !strcmp((char*)buf_, "set refresh rate ") ){
+		  // --------------------------------------------------------------------------------------- Set Refresh Rate
+		  // The frame is determined to be closed and valid length
+		  // Value range is 10-1000, the conditional statements are aranged for optimalisation, not readability
+		  if( buf_[20] == '\r' && buf_[21] == '\n' && len_ >= 22 ){ 	// 10-99<CR><LF>
+			  if( buf_[18] >= '1' && buf_[18] <= '9' &&
+				  buf_[19] >= '0' && buf_[19] <= '9' ){
+
+				  USB_RefreshFreq = ( ((buf_[18] - '0')*10) + (buf_[19] - '0') );
+				  USB_Update_RefFreq = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_RefFreq = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 22;
+			  len_ -= 22;
+		  }else if( buf_[21] == '\r' && buf_[22] == '\n' && len_ >= 23 ){ // 100-999<CR><LF>
+			  if( buf_[18] >= '1' && buf_[18] <= '9' &&
+				  buf_[19] >= '0' && buf_[19] <= '9' &&
+				  buf_[20] >= '0' && buf_[20] <= '9' ){
+
+				  USB_RefreshFreq = ( ((buf_[18] - '0')*100) + ((buf_[19] - '0')*10) + (buf_[20] - '0') );
+				  USB_Update_RefFreq = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_RefFreq = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 23;
+			  len_ -= 23;
+		  }else if( buf_[22] == '\r' && buf_[23] == '\n' && len_ >= 24 ){						// 1000<CR><LF>
+			  if( buf_[18] == '1' && buf_[19] == '0' && buf_[20] == '0' && buf_[21] == '0' ){
+
+				  USB_RefreshFreq = 1000;
+				  USB_Update_RefFreq = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_RefFreq = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 24;
+			  len_ -= 24;
+		  }else{
+			  USB_Update_RefFreq = USB_UPDATE_INVALID_ARG;
+
+			  // delete frame from input buffer
+			  for(uint32_t i=0; i<len_-1; ++i){
+				  if( buf_[i] == '\r' && buf_[i+1] == '\n' ){
+					  buf_ = buf_ + i + 2;
+					  len_ -= i + 2;
+					  break;
+				  }else if(i == len_-2){ // unclosed frame
+					  len_ = 0;
+				  }
+			  }
+		  }
+	  }else if( len_ >= 17 && !strcmp((char*)buf_, "set brightness ") ){
+		  // --------------------------------------------------------------------------------------- Set Brightness
+		  // The frame is determined to be closed and valid length
+		  // Value range is 1-100, the conditional statements are aranged for optimalisation, not readability
+		  if( buf_[16] == '%'  && buf_[17] == '\r' && buf_[18] == '\n' && len_ >= 19 ){ 	// 1-9<CR><LF>
+			  if( buf_[15] >= '1' && buf_[15] <= '9' ){
+
+				  USB_Brightness = ( buf_[15] - '0' );
+				  USB_Update_Brightness = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_Brightness = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 19;
+			  len_ -= 19;
+		  }else if( buf_[17] == '%'  && buf_[18] == '\r' && buf_[19] == '\n' && len_ >= 20 ){ // 10-99<CR><LF>
+			  if( buf_[15] >= '1' && buf_[15] <= '9' &&
+				  buf_[16] >= '0' && buf_[16] <= '9' ){
+
+				  USB_Brightness = ( ((buf_[15] - '0')*10) + (buf_[16] - '0') );
+				  USB_Update_Brightness = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_Brightness = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 20;
+			  len_ -= 20;
+		  }else if( buf_[18] == '%'  && buf_[19] == '\r' && buf_[20] == '\n' && len_ >= 21 ){						// 100<CR><LF>
+			  if( buf_[15] == '1' && buf_[16] == '0' && buf_[17] == '0' ){
+
+				  USB_Brightness = 100;
+				  USB_Update_Brightness = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_Brightness = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 21;
+			  len_ -= 21;
+		  }else{
+			  USB_Update_Brightness = USB_UPDATE_INVALID_ARG;
+
+			  // delete frame from input buffer
+			  for(uint32_t i=0; i<len_-1; ++i){
+				  if( buf_[i] == '\r' && buf_[i+1] == '\n' ){
+					  buf_ = buf_ + i + 2;
+					  len_ -= i + 2;
+					  break;
+				  }else if(i == len_-2){ // unclosed frame
+					  len_ = 0;
+				  }
+			  }
+		  }
+	  }else if( len_ >= 16 && !strcmp((char*)buf_, "set dot style ") ){
+		  // --------------------------------------------------------------------------------------- Set Dot Style
+		  // Possible styles: Static On, Static Off, Blink, Fade in-out, Custom
+		  // 9 10 5 11 6
+
+		  if( buf_[19] == '\r' && buf_[20] == '\n' && len_ >= 21 ){
+			  if( !strcmp((char*)buf_+14, "blink\r\n") ){
+				  USB_DotStyle = DOTS_BLINK;
+				  USB_Update_DotStyle = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_DotStyle = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 21;
+			  len_ -= 21;
+		  }else if( buf_[20] == '\r' && buf_[21] == '\n' && len_ >= 22 ){
+			  if( !strcmp((char*)buf_+14, "custom\r\n") ){
+				  USB_DotStyle = DOTS_CUSTOM;
+				  USB_Update_DotStyle = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_DotStyle = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 22;
+			  len_ -= 22;
+		  }else if( buf_[23] == '\r' && buf_[24] == '\n' && len_ >= 25 ){
+			  if( !strcmp((char*)buf_+14, "static on\r\n") ){
+				  USB_DotStyle = DOTS_STATIC_ON;
+				  USB_Update_DotStyle = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_DotStyle = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 25;
+			  len_ -= 25;
+		  }else if( buf_[24] == '\r' && buf_[25] == '\n' && len_ >= 26 ){
+			  if( !strcmp((char*)buf_+14, "static off\r\n") ){
+				  USB_DotStyle = DOTS_STATIC_OFF;
+				  USB_Update_DotStyle = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_DotStyle = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 26;
+			  len_ -= 26;
+		  }else if( buf_[25] == '\r' && buf_[26] == '\n' && len_ >= 27 ){
+			  if( !strcmp((char*)buf_+14, "fade in-out\r\n") ){
+				  USB_DotStyle = DOTS_FADEIO;
+				  USB_Update_DotStyle = USB_UPDATE_VALUE;
+			  }else{
+				  USB_Update_DotStyle = USB_UPDATE_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 27;
+			  len_ -= 27;
+		  }else{
+			  USB_Update_DotStyle = USB_UPDATE_INVALID_ARG;
+
+			  // delete frame from input buffer
+			  for(uint32_t i=0; i<len_-1; ++i){
+				  if( buf_[i] == '\r' && buf_[i+1] == '\n' ){
+					  buf_ = buf_ + i + 2;
+					  len_ -= i + 2;
+					  break;
+				  }else if(i == len_-2){ // unclosed frame
+					  len_ = 0;
+				  }
+			  }
+		  }
+
+	  }else if( len_ >= 15 && !strcmp((char*)buf_, "save settings\r\n") ){
+		  // --------------------------------------------------------------------------------------- Save settings
+
+		  USB_SaveSettings = USB_UPDATE_VALUE;
+
+		  // delete frame from input buffer
+		  buf_ = buf_ + 15;
+		  len_ -= 15;
+	  }else if( len_ >= 6 && !strcmp((char*)buf_, "help\r\n") ){
+		  // --------------------------------------------------------------------------------------- help
+		  USB_Help = HELP_LIST_COMMANDS;
+
+		  // delete frame from input buffer
+		  buf_ = buf_ + 6;
+		  len_ -= 6;
+	  }else if( len_ >= 7 && !strcmp((char*)buf_, "help ") ){
+		  // --------------------------------------------------------------------------------------- help command
+		  if( buf_[25] == '\r' && buf_[26] == '\n' && len_ >= 27 ){
+			  if( !strcmp((char*)buf_+5, "set custom dot style") ){
+				  USB_Help = HELP_SET_CUSTOM_STYLE;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 27;
+			  len_ -= 27;
+		  }else if( buf_[21] == '\r' && buf_[22] == '\n' && len_ >= 23 ){
+			  if( !strcmp((char*)buf_+5, "set refresh rate") ){
+				  USB_Help = HELP_SET_REFRESH_RATE;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 23;
+			  len_ -= 23;
+		  }else if( buf_[20] == '\r' && buf_[21] == '\n' && len_ >= 22 ){
+			  if( !strcmp((char*)buf_+5, "set time format") ){
+				  USB_Help = HELP_SET_TIME_FORMAT;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 22;
+			  len_ -= 22;
+		  }else if( buf_[19] == '\r' && buf_[20] == '\n' && len_ >= 21 ){
+			  if( !strcmp((char*)buf_+5, "set brightness") ){
+				  USB_Help = HELP_SET_BRIGHTNESS;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 21;
+			  len_ -= 21;
+		  }else if( buf_[18] == '\r' && buf_[19] == '\n' && len_ >= 20 ){
+			  if( !strcmp((char*)buf_+5, "set dot style") ){
+				  USB_Help = HELP_SET_DOT_STYLE;
+			  }else if( !strcmp((char*)buf_+5, "save settings") ){
+				  USB_Help = HELP_SAVE_SETTINGS;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 20;
+			  len_ -= 20;
+		  }else if( buf_[16] == '\r' && buf_[17] == '\n' && len_ >= 18 ){
+			  if( !strcmp((char*)buf_+5, "read eeprom") ){
+				  USB_Help = HELP_READ_EEPROM;
+			  }else if( !strcmp((char*)buf_+5, "save eeprom") ){
+				  USB_Help = HELP_SAVE_EEPROM;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 18;
+			  len_ -= 18;
+		  }else if( buf_[13] == '\r' && buf_[14] == '\n' && len_ >= 15 ){
+			  if( !strcmp((char*)buf_+5, "set time") ){
+				  USB_Help = HELP_SET_TIME;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 15;
+			  len_ -= 15;
+		  }else if( buf_[9] == '\r' && buf_[10] == '\n' && len_ >= 11 ){
+			  if( !strcmp((char*)buf_+5, "help") ){
+				  USB_Help = HELP_HELP;
+			  }else{
+				  USB_Help = HELP_INVALID_ARG;
+			  }
+
+			  // delete frame from input buffer
+			  buf_ = buf_ + 11;
+			  len_ -= 11;
+		  }else{
+			  USB_Help = HELP_INVALID_ARG;
+
+			  // delete frame from input buffer
+			  for(uint32_t i=0; i<len_-1; ++i){
+				  if( buf_[i] == '\r' && buf_[i+1] == '\n' ){
+					  buf_ = buf_ + i + 2;
+					  len_ -= i + 2;
+					  break;
+				  }else if(i == len_-2){ // unclosed frame
+					  len_ = 0;
+				  }
+			  }
+		  }
+
+	  }else{
+		  USB_UnknownRequest = 1;
+		  // skip to CRLF
+
+		  for(uint32_t i=0; i<len_-1; ++i){
+			  if( buf_[i] == '\r' && buf_[i+1] == '\n' ){
+				  buf_ = buf_ + i + 2;
+				  len_ -= i + 2;
+				  break;
+			  }else if(i == len_-2){ // unclosed frame
+				  len_ = 0;
+			  }
+		  }
+	  }
+
+  }
+  return (USBD_OK);
+  /* USER CODE END 6 */
+}
+
+/**
+  * @brief  CDC_Transmit_FS
+  *         Data to send over USB IN endpoint are sent over CDC interface
+  *         through this function.
+  *         @note
+  *
+  *
+  * @param  Buf: Buffer of data to be sent
+  * @param  Len: Number of data to be sent (in bytes)
+  * @retval USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
+  */
+uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
+{
+  uint8_t result = USBD_OK;
+  /* USER CODE BEGIN 7 */
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+  if (hcdc->TxState != 0){
+    return USBD_BUSY;
+  }
+
+
+
+  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
+  result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+  /* USER CODE END 7 */
+  return result;
+}
+
+/* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+
+/* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

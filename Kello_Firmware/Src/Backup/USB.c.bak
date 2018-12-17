@@ -1,0 +1,347 @@
+/*
+ * USB.c
+ *
+ *  Created on: 10 lis 2018
+ *      Author: canna_000
+ */
+
+#include "USB.h"
+#include "Defines.h"
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+HAL_StatusTypeDef TX_Buffer_Status;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/** @brief  Initialize USB routine
+  * @param  none
+  * @retval status
+  */
+HAL_StatusTypeDef	USB_Init( void ){
+	HAL_StatusTypeDef 	ret = HAL_OK;
+
+	TX_Buffer_Status = HAL_BUSY;
+
+	USB_Update_Time 		= USB_UPDATE_IDLE;
+	USB_Update_Brightness 	= USB_UPDATE_IDLE;
+	USB_Update_RefFreq 		= USB_UPDATE_IDLE;
+	USB_Update_TimeFormat 	= USB_UPDATE_IDLE;
+	USB_Update_DotStyle 	= USB_UPDATE_IDLE;
+	USB_SaveSettings 		= USB_UPDATE_IDLE;
+	USB_UnknownRequest 		= USB_UPDATE_IDLE;
+	USB_Help 				= HELP_NONE;
+
+	USB_TX_Size = 0;
+	USB_RX_Size = 0;
+	TX_Buffer_Status = HAL_OK;
+
+	return ret;
+}
+
+/** @brief  Get TX buffer status
+  * @param  none
+  * @retval status
+  */
+HAL_StatusTypeDef	USB_TXBuffer_Get_Status( void ){
+	return TX_Buffer_Status;
+}
+
+/** @brief  Set TX buffer status
+  * @param  status
+  * @retval none
+  */
+void				USB_TXBuffer_Set_Status( HAL_StatusTypeDef status ){
+	TX_Buffer_Status = status;
+}
+
+/** @brief  Returns true if anything has been received
+  * @param  none
+  * @retval 1 if true, 0 otherwise
+  */
+uint8_t				USB_RX_IsReceived( void ){
+	if( USB_Update_Time 		!= USB_UPDATE_IDLE ||
+		USB_Update_Brightness 	!= USB_UPDATE_IDLE ||
+		USB_Update_RefFreq 		!= USB_UPDATE_IDLE ||
+		USB_Update_TimeFormat 	!= USB_UPDATE_IDLE ||
+		USB_Update_DotStyle 	!= USB_UPDATE_IDLE ||
+		USB_SaveSettings 		!= USB_UPDATE_IDLE ||
+		USB_UnknownRequest 		!= USB_UPDATE_IDLE ||
+		USB_Help 				!= HELP_NONE
+		) 	return 1;
+	else 	return 0;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Returns message flag - "set time"
+  * @param  none
+  * @retval 2 if invalid argument, 1 if valid argument, 0 if not invoked
+  */
+uint8_t				USB_Get_Time_Update(){
+	return USB_Update_Time;
+}
+
+/** @brief  Returns new hours value
+  * @param  none
+  * @retval BCD format value
+  */
+uint8_t 			USB_Get_Time_HH(){
+	return USB_Hours;
+}
+
+/** @brief  Returns new minutes value
+  * @param  none
+  * @retval BCD format value
+  */
+uint8_t 			USB_Get_Time_MM(){
+	return USB_Minutes;
+}
+
+/** @brief  Returns new seconds value
+  * @param  none
+  * @retval BCD format value
+  */
+uint8_t 			USB_Get_Time_SS(){
+	return USB_Seconds;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Returns message flag - "set brightness"
+  * @param  none
+  * @retval 2 if invalid argument, 1 if valid argument, 0 if not invoked
+  */
+uint8_t				USB_Get_Brightness_Update(){
+	return USB_Update_Brightness;
+}
+
+/** @brief  Returns new brightness value
+  * @param  none
+  * @retval 1-100 value
+  */
+uint8_t 			USB_Get_Brightness(){
+	return USB_Brightness;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Returns message flag - "set refresh rate"
+  * @param  none
+  * @retval 2 if invalid argument, 1 if valid argument, 0 if not invoked
+  */
+uint8_t				USB_Get_RefRate_Update(){
+	return USB_Update_RefFreq;
+}
+
+/** @brief  Returns new refresh rate value
+  * @param  none
+  * @retval 10-1000 value
+  */
+uint16_t 			USB_Get_RefRate(){
+	return USB_RefreshFreq;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Returns message flag - "set time format"
+  * @param  none
+  * @retval 2 if invalid argument, 1 if valid argument, 0 if not invoked
+  */
+uint8_t				USB_Get_TimeFormat_Update(){
+	return USB_Update_TimeFormat;
+}
+
+/** @brief  Returns new time format
+  * @param  none
+  * @retval 12 or 24
+  */
+uint8_t 			USB_Get_TimeFormat(){
+	return USB_TimeFormat;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Returns message flag - "set dot style"
+  * @param  none
+  * @retval 2 if invalid argument, 1 if valid argument, 0 if not invoked
+  */
+uint8_t				USB_Get_DotStyle_Update(){
+	return USB_Update_DotStyle;
+}
+
+/** @brief  Returns new dot style
+  * @param  none
+  * @retval value as defined in "Defines.h"
+  */
+uint8_t 			USB_Get_DotStyle(){
+	return USB_DotStyle;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Returns message flag - "save settings"
+  * @param  none
+  * @retval 2 if invalid argument, 1 if valid argument, 0 if not invoked
+  */
+uint8_t				USB_Get_SaveSettings_Update(){
+	return USB_SaveSettings;
+}
+
+// ------------------------------------------------------------------
+
+/** @brief  Sends responses to incomming USB communication and clears flags
+  * @param  none
+  * @retval none
+  */
+void				USB_RX_Respond( void ){
+	uint8_t *	buf = USB_TX_Data;
+	uint32_t * 	Len = &USB_TX_Size;
+
+	// The transmission is divider to lower memory usage
+
+	*Len = 0;
+	if( USB_Update_Time == USB_UPDATE_VALUE ){
+		*Len = sprintf( (char*)buf + *Len, "Time Set\r\n") + *Len;
+		USB_Update_Time = USB_UPDATE_IDLE;
+	}else if( USB_Update_Time == USB_UPDATE_INVALID_ARG ){
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: Set Time *\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help Set Time\r\n") + *Len;
+		USB_Update_Time = USB_UPDATE_IDLE;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	if( USB_Update_Brightness == USB_UPDATE_VALUE ){
+		*Len = sprintf( (char*)buf + *Len, "Brightness Set\r\n") + *Len;
+		USB_Update_Brightness = USB_UPDATE_IDLE;
+	}else if( USB_Update_Brightness == USB_UPDATE_INVALID_ARG ){
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: Set Brightness *\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help Set Brightness\r\n") + *Len;
+		USB_Update_Brightness = USB_UPDATE_IDLE;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	if( USB_Update_RefFreq == USB_UPDATE_VALUE ){
+		*Len = sprintf( (char*)buf + *Len, "Refresh Rate Set\r\n") + *Len;
+		USB_Update_RefFreq = USB_UPDATE_IDLE;
+	}else if( USB_Update_RefFreq == USB_UPDATE_INVALID_ARG ){
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: Set Refresh Rate *\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help Set Refresh Rate\r\n") + *Len;
+		USB_Update_RefFreq = USB_UPDATE_IDLE;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	if( USB_Update_TimeFormat == USB_UPDATE_VALUE ){
+		*Len = sprintf( (char*)buf + *Len, "Time Format Set\r\n") + *Len;
+		USB_Update_TimeFormat = USB_UPDATE_IDLE;
+	}else if( USB_Update_TimeFormat == USB_UPDATE_INVALID_ARG ){
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: Set Time Format *\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help Set Time Format\r\n") + *Len;
+		USB_Update_TimeFormat = USB_UPDATE_IDLE;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	if( USB_Update_DotStyle == USB_UPDATE_VALUE ){
+		*Len = sprintf( (char*)buf + *Len, "Dot Style Set\r\n") + *Len;
+		USB_Update_DotStyle = USB_UPDATE_IDLE;
+	}else if( USB_Update_DotStyle == USB_UPDATE_INVALID_ARG ){
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: Set Dot Style *\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help Set Dot Style\r\n") + *Len;
+		USB_Update_DotStyle = USB_UPDATE_IDLE;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	if( USB_SaveSettings == USB_UPDATE_VALUE ){
+		*Len = sprintf( (char*)buf + *Len, "Settings Saved\r\n") + *Len;
+		USB_SaveSettings = USB_UPDATE_IDLE;
+	}else if( USB_SaveSettings == USB_UPDATE_INVALID_ARG ){
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: Save Settings\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help Save Settings\r\n") + *Len;
+		USB_SaveSettings = USB_UPDATE_IDLE;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	if( USB_UnknownRequest ){
+		*Len = sprintf( (char*)buf + *Len, "Unknown command\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help\r\n") + *Len;
+		USB_UnknownRequest = 0;
+	}
+	CDC_Transmit_FS(buf, *Len);
+
+	*Len = 0;
+	switch( USB_Help ){
+	case HELP_LIST_COMMANDS:
+		*Len = sprintf( (char*)buf + *Len, "Command list:\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tset time <HH:MM:SS>\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tset time format <12/24>\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tset refresh rate <val>Hz\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tset brightness <val>%%\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tset dot style <dot style>\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tset custom dot style <200 16bit values>\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tsave settings\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tread eeprom <Addr>\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tsave eeprom <Addr> <Data>\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\thelp\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\thelp <Command>\r\n") + *Len;
+		break;
+	case HELP_HELP:
+		*Len = sprintf( (char*)buf + *Len, "help - lists available commands, every command is terminated with CRLF\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tcommands are case sensitive, all lowercase\r\n") + *Len;
+		break;
+	case HELP_READ_EEPROM:
+		*Len = sprintf( (char*)buf + *Len, "read eeprom <Addr> - Reads one byte at <addr> of 4Kbit EEprom. \r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tAddress is specified in plain text as hex number, range 0-511\r\n") + *Len;
+		break;
+	case HELP_SAVE_EEPROM:
+		*Len = sprintf( (char*)buf + *Len, "save eeprom <Addr> <Data> - Saves <Data> at <Addr> of 4Kbit EEprom. \r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tAddress is specified in plain text as hex number, range 0-511\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tData is one byte separated from address with space\r\n") + *Len;
+		break;
+	case HELP_SAVE_SETTINGS:
+		*Len = sprintf( (char*)buf + *Len, "save settings - Saves current settings in EEprom\r\n") + *Len;
+		break;
+	case HELP_SET_BRIGHTNESS:
+		*Len = sprintf( (char*)buf + *Len, "set brightness <val>%% - sets nixie brightness, decimal range 1 to 100%%\r\n") + *Len;
+		break;
+	case HELP_SET_CUSTOM_STYLE:
+		*Len = sprintf( (char*)buf + *Len, "set custom dot style <200 16bit values> - sets custom dot pattern\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tfollowed by 400 bytes of data, big endian, MSB first\r\n") + *Len;
+		break;
+	case HELP_SET_DOT_STYLE:
+		*Len = sprintf( (char*)buf + *Len, "set dot style <dot style> - sets dot pattern. Possible styles:\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tblink\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tcustom\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tstatic on\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tstatic off\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tfade in-out\r\n") + *Len;
+		break;
+	case HELP_SET_REFRESH_RATE:
+		*Len = sprintf( (char*)buf + *Len, "set refresh rate <val>Hz - sets nixie refresh rate, decimal range 10 to 1000Hz\r\n") + *Len;
+		break;
+	case HELP_SET_TIME:
+		*Len = sprintf( (char*)buf + *Len, "set time <HH:MM:SS> - sets current time (24h format)\r\n") + *Len;
+		break;
+	case HELP_SET_TIME_FORMAT:
+		*Len = sprintf( (char*)buf + *Len, "set time format <12/24> - sets either 12 or 24h time format\r\n") + *Len;
+		break;
+	case HELP_INVALID_ARG:
+	default:
+		*Len = sprintf( (char*)buf + *Len, "Invalid parameter: help\r\n") + *Len;
+		*Len = sprintf( (char*)buf + *Len, "\tIn case of problems type: help help\r\n") + *Len;
+		break;
+	}
+	USB_Help = HELP_NONE;
+	CDC_Transmit_FS(buf, *Len);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
