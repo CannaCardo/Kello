@@ -6,7 +6,7 @@
 
 USB powered clock made on four classic Z567M Nixie tubes. Pretty simplistic, without unnecessary gadgets: displays time, can be set up both from PC app or via optional capacitive buttons. Refresh frequency, brightness, time format, time and date (for adjusting winter/ summer time) can be configured as needed. Settings and current time are stored in EEprom and RTC. If the clock is connected to the PC it will update its time every minute (using the provided link).
 
-![](header.png)
+![](Kello_case.png)
 
 For the prototype version I've dropped the idea of capacitive buttons integrated into the case, as the clock will stay connected to the PC and it's much more ergonomic to use the app.
 The first idea for the clock opted for bluetooth/wifi integration, so that a smartphone could be used as interface for quick setup and the clock itself could synchronize time via Internet.  Since there already is a USB socket used to power the device it seemed silly not to connect it to the PC, which itself simplified the project rendering Wifi and BT pointless. 
@@ -17,6 +17,8 @@ The Nixie standoffs can be made from D-Sub connectors (such as MH CONNECTORS MHD
 
 The dots (Neon bulbs) are soldered on 3 pieces of 2mm piano wire. Sanding the wire down before soldering will ease the process. 
 
+![](Kello_board.png)
+![](Kello_lamps.png)
 
 ## Release History
 
