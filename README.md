@@ -18,7 +18,7 @@ The Nixie standoffs can be made from D-Sub connectors (such as MH CONNECTORS MHD
 The dots (Neon bulbs) are soldered on 3 pieces of 2mm piano wire. Sanding the wire down before soldering will ease the process. 
 
 ![](Kello_board.png)
-![](Kello_lamps.png)
+![](Kello_Lamps.png)
 
 ## Release History
 
